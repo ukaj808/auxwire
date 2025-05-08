@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --animate-border-pulse-black: border-pulse-black 2s infinite;
+  --animate-border-pulse-white: border-pulse-white 2s infinite;
+
+  @keyframes border-pulse-black {
+    0%   { border-color: rgba(50, 50, 50, 1); }  /* Dark Grey */
+    50%  { border-color: rgba(50, 50, 50, 0); } /* More Transparent Dark Grey */
+    100% { border-color: rgba(50, 50, 50, 1); }  /* Dark Grey */
+  }
+
+  @keyframes border-pulse-white {
+    0%   { border-color: rgba(255, 255, 255, 1); }  /* White */
+    50%  { border-color: rgba(255, 255, 255, 0); } /* More Transparent White */
+    100% { border-color: rgba(255, 255, 255, 1); }  /* White */
+  }
+}

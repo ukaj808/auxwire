@@ -1,6 +1,6 @@
 dist-newstyle
-dist-static
+client-side/dist-static
 scratch.txt
 rooms*
-node_modules
+client-side/node_modules
 tls

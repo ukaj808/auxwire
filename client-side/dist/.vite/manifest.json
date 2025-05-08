@@ -1,0 +1,43 @@
+{
+  "_modulepreload-polyfill-C7uwjlHg.css": {
+    "file": "assets/modulepreload-polyfill-C7uwjlHg.css",
+    "src": "_modulepreload-polyfill-C7uwjlHg.css"
+  },
+  "_modulepreload-polyfill-CzuqXAoR.js": {
+    "file": "assets/modulepreload-polyfill-CzuqXAoR.js",
+    "name": "modulepreload-polyfill",
+    "css": [
+      "assets/modulepreload-polyfill-C7uwjlHg.css"
+    ]
+  },
+  "src/pages/home/main.ts": {
+    "file": "assets/home-E4sukadP.js",
+    "name": "home",
+    "src": "src/pages/home/main.ts",
+    "isEntry": true,
+    "imports": [
+      "_modulepreload-polyfill-CzuqXAoR.js"
+    ]
+  },
+  "src/pages/room/main.ts": {
+    "file": "assets/room-DgxIRYsR.js",
+    "name": "room",
+    "src": "src/pages/room/main.ts",
+    "isEntry": true,
+    "imports": [
+      "_modulepreload-polyfill-CzuqXAoR.js"
+    ]
+  },
+  "src/scripts/aux-audio-socket-worker.ts": {
+    "file": "assets/audio-socket-worker-BJpviiFS.js",
+    "name": "audio-socket-worker",
+    "src": "src/scripts/aux-audio-socket-worker.ts",
+    "isEntry": true
+  },
+  "src/scripts/aux-worklet-processor.ts": {
+    "file": "assets/worklet-processor-h2vOt5bl.js",
+    "name": "worklet-processor",
+    "src": "src/scripts/aux-worklet-processor.ts",
+    "isEntry": true
+  }
+}

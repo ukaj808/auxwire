@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AuxWire.Service.Application ( server ) where
+
+module AuxWire.Service.Application (server) where
 
 import Servant
 
@@ -13,35 +14,40 @@ import AuxWire.Service.Handlers.PostValidateUrl
 import AuxWire.Service.Handlers.PutStartMusic
 import AuxWire.Service.Handlers.PutUploadSong
 import AuxWire.Service.Handlers.RoomWs
-import CommandLine
-import Network.Wai
+import Commons.Vite
+import Env
 import Network.HTTP.Types
+import Network.Wai
 
-handlers :: CLArgs -> Registry IO -> Server API
-handlers opts rr =
-       homeHandler   opts
-  :<|> createHandler rr
-  :<|> roomHandler   rr
-  :<|> enterHandler  rr
-  :<|> connectHandler rr
-  :<|> startHandler rr
-  :<|> uploadHandler rr
-  :<|> validateHandler
-  :<|> publicHandler
-  where
-    publicHandler = serveDirectoryWebApp $ staticAssetsPath opts
+handlers :: Env -> AuxWire IO -> Server API
+handlers env auxwire =
+  homeHandler env
+    :<|> createHandler auxwire
+    :<|> roomHandler env auxwire
+    :<|> enterHandler auxwire
+    :<|> connectHandler auxwire
+    :<|> startHandler auxwire
+    :<|> uploadHandler auxwire
+    :<|> validateHandler
+    :<|> publicHandler
+ where
+  publicHandler = serveDirectoryWebApp "./client-side/dist"
 
-middleware  :: Middleware
-middleware app req sendResponse =
+defaultHeadersMiddleware :: Middleware
+defaultHeadersMiddleware app req sendResponse =
   app req $ \res -> do
     sendResponse $ mapResponseHeaders (defaultHeaders ++) res
 
+allMiddlewares :: Env -> Middleware
+allMiddlewares env =
+  defaultHeadersMiddleware
+    . viteProxyMiddleware (ViteProxySettings (isDev env) ["vite-proxy"] 5173 True)
 
 defaultHeaders :: ResponseHeaders
 defaultHeaders =
-    [ ("Cross-Origin-Opener-Policy", "same-origin")
-    , ("Cross-Origin-Embedder-Policy", "require-corp")
-    ]
+  [ ("Cross-Origin-Opener-Policy", "same-origin")
+  , ("Cross-Origin-Embedder-Policy", "require-corp")
+  ]
 
-server :: CLArgs -> Registry IO -> Application
-server opts rr = middleware $ serve (Proxy @API) (handlers opts rr)
+server :: Env -> AuxWire IO -> Application
+server env rr = allMiddlewares env $ serve (Proxy @API) (handlers env rr)

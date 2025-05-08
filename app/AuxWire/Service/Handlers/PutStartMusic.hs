@@ -1,26 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
-module AuxWire.Service.Handlers.PutStartMusic
-  (
-    startHandler
-  ) where 
+
+module AuxWire.Service.Handlers.PutStartMusic (
+  startHandler,
+) where
 
 import Control.Monad.IO.Class
+import Network.Socket (SockAddr)
 import Servant
+
+import Data.ByteString.Lazy.UTF8 qualified as UTF8
 
 import AuxWire.Core.API
 
-startHandler :: Registry IO -> RoomId -> Maybe UserId -> Handler NoContent
-startHandler rr rId hUid = do
-  case hUid of 
-    Nothing -> throwError $ err401 { errBody = "No User Id provided" }
-    Just uId -> do
-      maybeRoom <- liftIO $ getRoom rr rId
-      case maybeRoom of
-        Nothing   -> throwError $ err404 { errBody = "Room not found" }
-        Just room -> do
-          result <- liftIO $ startMusic room uId
-          case result of
-            StartMusicSuccess -> return NoContent
-            NotCreator        -> throwError $ err401 { errBody = "You are not the creator of this room"  }
-            RoomStillCreating -> throwError $ err409 { errBody = "The room is still being created"       }
-            AlreadyRunning    -> throwError $ err409 { errBody = "The music streamer is already running" }
+type instance UserId IO = SockAddr
+
+startHandler :: AuxWire IO -> UserId IO -> Handler NoContent
+startHandler auxwire uid = do
+  startMusicResult <- liftIO $ startMusic auxwire uid
+
+  case startMusicResult of
+    Left err -> throwError $ err500{errBody = "Error: " <> UTF8.fromString err}
+    Right _ -> return NoContent

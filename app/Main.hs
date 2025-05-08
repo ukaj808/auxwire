@@ -1,26 +1,25 @@
-module Main( main ) where
+module Main (main) where
 
-import Network.Wai.Handler.Warp
-
-import AuxWire.Core.Registry
+import AuxWire.Core.IO
 import AuxWire.Service.Application
-import CommandLine
-import System.IO.Temp (withTempDirectory)
+import Env
+import Network.Wai.Handler.Warp
 import Network.Wai.Handler.WarpTLS
 import Network.Wai.Middleware.ForceSSL
+import System.IO.Temp (withTempDirectory)
 
 main :: IO ()
 main = do
-  clArgs       <- getCLArgs
+  env <- buildEnv
   withTempDirectory
     "."
     "rooms"
     $ \roomsPath -> do
-      roomRegistry <- newRegistry roomsPath
-      runTLS (tlsOpts (certificatePath clArgs) (privateKeyPath clArgs)) warOpts $
-        forceSSL             $
-          server clArgs roomRegistry
-  where
-    port = 8443
-    tlsOpts crt privKey = (tlsSettings crt privKey) { onInsecure = AllowInsecure }
-    warOpts = setPort port defaultSettings
+      auxwire <- initAuxWire roomsPath
+      runTLS (tlsOpts (cert env) (key env)) warOpts $
+        forceSSL $
+          server env auxwire
+ where
+  port = 8443
+  tlsOpts crt privKey = (tlsSettings crt privKey){onInsecure = AllowInsecure}
+  warOpts = setPort port defaultSettings

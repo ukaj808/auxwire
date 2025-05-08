@@ -1,0 +1,1 @@
+import{c as r,o as s,a}from"./modulepreload-polyfill-CzuqXAoR.js";const _=(t,c)=>{const e=t.__vccOpts||t;for(const[o,n]of c)e[o]=n;return e},p={},i={class:"bg-black text-white p-4"};function f(t,c){return s(),r("div",i," Home Fiz ")}const l=_(p,[["render",f]]);a(l).mount("#app");

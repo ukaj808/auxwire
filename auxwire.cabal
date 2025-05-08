@@ -21,11 +21,7 @@ executable auxwire
                       , AuxWire.Browser.RoomMobile
                       , AuxWire.Core.API
                       , AuxWire.Core.Model 
-                      , AuxWire.Core.Music 
-                      , AuxWire.Core.Registry 
-                      , AuxWire.Core.Room 
-                      , AuxWire.Core.Shared 
-                      , AuxWire.Core.User 
+                      , AuxWire.Core.IO 
                       , AuxWire.Service.API 
                       , AuxWire.Service.Application 
                       , AuxWire.Service.Handlers.GetHome 
@@ -36,11 +32,12 @@ executable auxwire
                       , AuxWire.Service.Handlers.PutStartMusic
                       , AuxWire.Service.Handlers.PutUploadSong
                       , AuxWire.Service.Handlers.RoomWs 
-                      , CommandLine 
                       , Commons.FFMpeg
                       , Commons.State
                       , Commons.Wav 
                       , Commons.YtDlp
+                      , Commons.Vite
+                      , Env 
     -- other-extensions:
     build-depends:      aeson
                       , async
@@ -50,15 +47,18 @@ executable auxwire
                       , blaze-svg
                       , bytestring
                       , clay
+                      , case-insensitive
                       , colour
                       , containers
                       , directory
                       , filepath
                       , hashable
                       , heaps
+                      , http-conduit
                       , http-media
                       , http-types
                       , mtl
+                      , network
                       , optparse-applicative
                       , palette
                       , process
@@ -69,6 +69,7 @@ executable auxwire
                       , servant-multipart-api
                       , servant-server
                       , servant-websockets
+                      , stm
                       , temporary
                       , text 
                       , time
@@ -76,11 +77,14 @@ executable auxwire
                       , unix
                       , uuid
                       , utf8-string
+                      , vector
                       , wai
                       , wai-extra
+                      , wai-websockets
                       , warp
                       , warp-tls
                       , websockets
+                      , wuss
 
     hs-source-dirs:   app
     default-language: GHC2021

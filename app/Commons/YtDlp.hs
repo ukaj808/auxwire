@@ -1,38 +1,38 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Commons.YtDlp
-  (
-    ytdlpDownload,
-    YtdlpOutput (..),
-    ytdlpValid,
-    ytdlpTemplatePath
-  ) where
 
-import System.Process
-import Data.Aeson
+module Commons.YtDlp (
+  ytdlpDownload,
+  YtdlpOutput (..),
+  ytdlpValid,
+  ytdlpTemplatePath,
+) where
+
 import Control.Exception
+import Data.Aeson
+import System.Process
 
-import qualified Data.Text                  as T
-import qualified Data.ByteString.Lazy.Char8 as BLC
+import Data.ByteString.Lazy.Char8 qualified as BLC
+import Data.Text qualified as T
 
 type YtdlpExecutable = FilePath
-type URL             = T.Text
+type URL = String
 data Simulate = Simulate | Download FilePath
 
 -- Parameters: Path to the YtdlpExecutable
 --             URL to the video
 -- Result:     True if yt-dlp can download the video
 --             False if yt-dlp cannot download the video in which case it will return an exit code
-ytdlpValid :: YtdlpExecutable -> URL -> IO T.Text
+ytdlpValid :: YtdlpExecutable -> URL -> IO String
 ytdlpValid exec url =
   catch
-
-    (do
-    (_, result) <- ytdlp exec [skipDownloadArg] url Simulate
-    return $ ytdlpTitle result)
-
-    (\(e :: IOError) -> do
-    print $ show e
-    return "")
+    ( do
+        (_, result) <- ytdlp exec [skipDownloadArg] url Simulate
+        return $ ytdlpTitle result
+    )
+    ( \(e :: IOError) -> do
+        print $ show e
+        return ""
+    )
 
 -- Parameters: Path to the YtdlpExecutable
 --             Directory to save the video (should be a directory; not a file)
@@ -41,13 +41,12 @@ ytdlpValid exec url =
 --
 ytdlpDownload :: YtdlpExecutable -> FilePath -> URL -> IO (FilePath, YtdlpOutput)
 ytdlpDownload exec out url = do
-  ytdlOutput      <- ytdlp exec (forceOverwriteArg : ytdlpOutputArg out) url (Download out)
+  ytdlOutput <- ytdlp exec (forceOverwriteArg : ytdlpOutputArg out) url (Download out)
   case ytdlOutput of
     (Just path, ytdlpOut) -> return (path, ytdlpOut)
     (Nothing, _) -> error "ytdlpDownload: ytdlp returned Nothing"
 
--- Parameters: Path to the YtdlpExecutable
---             Extra arguments to pass to yt-dlp, ontop of the default arguments (see below*)
+-- Parameters: Path to the YtdlpExecutable Extra arguments to pass to yt-dlp, ontop of the default arguments (see below*)
 --             URL to the video
 --             Simulate the download (True) or actually download the video (False)
 -- Result:     (Po*ssibly a file path, depending on the simulate argument, Video metadata)
@@ -57,7 +56,7 @@ ytdlp exec args url sim = do
   let noSimArg' = case sim of
         Simulate -> []
         Download _ -> [noSimArg]
-  jsonOutput <- readProcess exec (args ++ noSimArg' ++ [fullJsonDumpArg, T.unpack url]) ""
+  jsonOutput <- readProcess exec (args ++ noSimArg' ++ [fullJsonDumpArg, url]) ""
   let result = eitherDecode (BLC.pack jsonOutput) :: Either String YtdlpOutput
   case result of
     Left err -> error err
@@ -80,10 +79,10 @@ ytdlpOutputArg = outputTemplateArg . ytdlpTemplatePath
 -- Result:     The file path where the video was downloaded to
 --
 ytdlpTemplatePathReplaced :: FilePath -> YtdlpOutput -> FilePath
-ytdlpTemplatePathReplaced dir ytdlpOut = T.unpack $ T.replace "%(ext)s" (ytdlpExt ytdlpOut) $ T.replace "%(title)s" (ytdlpTitle ytdlpOut) (T.pack $ ytdlpTemplatePath dir)
+ytdlpTemplatePathReplaced dir ytdlpOut = T.unpack $ T.replace "%(ext)s" (T.pack $ ytdlpExt ytdlpOut) $ T.replace "%(title)s" (T.pack $ ytdlpTitle ytdlpOut) (T.pack $ ytdlpTemplatePath dir)
 
 -- Parameters: Directory where you want the file to be downloaded to
---             
+--
 -- Result:     A template file path used for the ytdlp executable e,g, "./somedir/%(title)s.%(ext)s"
 ytdlpTemplatePath :: FilePath -> FilePath
 ytdlpTemplatePath [] = ytdlTemplateStr
@@ -104,7 +103,9 @@ noSimArg :: String
 noSimArg = "--no-simulate"
 
 -- Result:     A argument to the yt-dlp executable, which prints a json output instead of the standard stdout lines of yt-dlp
--- *Warning:   Adding this argument tells the yt-dlp exec that it should SIMULATE a download. Provide the --no-simulate arg in
+
+-- * Warning:   Adding this argument tells the yt-dlp exec that it should SIMULATE a download. Provide the --no-simulate arg in
+
 --             coonjuction with this arg if you want json output AND the downloaded file.
 fullJsonDumpArg :: String
 fullJsonDumpArg = "-J"
@@ -120,40 +121,39 @@ skipDownloadArg = "--skip-download"
 outputTemplateArg :: FilePath -> [String]
 outputTemplateArg path = ["-o", path]
 
-
 data YtdlpOutput = YtdlpOutput
-  {
-    ytdlpId          :: T.Text,
-    ytdlpTitle       :: T.Text,
-    ytdlpThumbnail   :: T.Text,
-    ytdlpDescription :: T.Text,
-    ytdlpUploader    :: T.Text,
-    ytdlpChannel     :: T.Text,
-    ytdlpFullTitle   :: T.Text,
-    ytdlpExt         :: T.Text,
-    ytdlpDuration    :: Int
-  } deriving (Show)
+  { ytdlpId :: String
+  , ytdlpTitle :: String
+  , ytdlpThumbnail :: String
+  , ytdlpDescription :: String
+  , ytdlpUploader :: String
+  , ytdlpChannel :: String
+  , ytdlpFullTitle :: String
+  , ytdlpExt :: String
+  , ytdlpDuration :: Int
+  }
+  deriving (Show)
 
 instance FromJSON YtdlpOutput where
   parseJSON = withObject "YtdlpOutput" $ \o -> do
-    ytdlpId          <- o .: "id"
-    ytdlpTitle       <- o .: "title"
-    ytdlpThumbnail   <- o .: "thumbnail"
+    ytdlpId <- o .: "id"
+    ytdlpTitle <- o .: "title"
+    ytdlpThumbnail <- o .: "thumbnail"
     ytdlpDescription <- o .: "description"
-    ytdlpUploader    <- o .: "uploader"
-    ytdlpDuration    <- o .: "duration"
-    ytdlpChannel     <- o .: "channel"
-    ytdlpFullTitle   <- o .: "fulltitle"
-    ytdlpExt         <- o .: "ext"
-    return YtdlpOutput
-      {
-        ytdlpId          = ytdlpId
-      , ytdlpTitle       = ytdlpTitle
-      , ytdlpThumbnail   = ytdlpThumbnail
-      , ytdlpDescription = ytdlpDescription
-      , ytdlpUploader    = ytdlpUploader
-      , ytdlpDuration    = ytdlpDuration
-      , ytdlpChannel     = ytdlpChannel
-      , ytdlpFullTitle   = ytdlpFullTitle
-      , ytdlpExt        = ytdlpExt
-      }
+    ytdlpUploader <- o .: "uploader"
+    ytdlpDuration <- o .: "duration"
+    ytdlpChannel <- o .: "channel"
+    ytdlpFullTitle <- o .: "fulltitle"
+    ytdlpExt <- o .: "ext"
+    return
+      YtdlpOutput
+        { ytdlpId = ytdlpId
+        , ytdlpTitle = ytdlpTitle
+        , ytdlpThumbnail = ytdlpThumbnail
+        , ytdlpDescription = ytdlpDescription
+        , ytdlpUploader = ytdlpUploader
+        , ytdlpDuration = ytdlpDuration
+        , ytdlpChannel = ytdlpChannel
+        , ytdlpFullTitle = ytdlpFullTitle
+        , ytdlpExt = ytdlpExt
+        }

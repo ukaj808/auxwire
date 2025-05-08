@@ -1,21 +1,38 @@
-module AuxWire.Service.Handlers.GetHome 
-  ( 
-    homeHandler
-  ) where
+{-# LANGUAGE OverloadedStrings #-}
 
-import Control.Monad.IO.Class
+module AuxWire.Service.Handlers.GetHome (
+  homeHandler,
+) where
+
 import Servant
 
-import Data.Text.IO as T
+import Text.Blaze.Html5 as H
+import Text.Blaze.Html5.Attributes qualified as A
 
-import AuxWire.Service.API
-import CommandLine
+import Env
 
-import System.FilePath
-
-homeHandler :: CLArgs -> Handler StaticHtml
-homeHandler opts = do
-  homeHtmlFile <- liftIO $ T.readFile homeViewFilePath
-  return $ StaticHtml homeHtmlFile
-  where
-    homeViewFilePath = staticAssetsPath opts </> "home.html"
+homeHandler :: Env -> Handler H.Html
+homeHandler env =
+  case env of
+    DevEnv{} -> return $
+      H.docTypeHtml $ do
+        H.head $ do
+          H.meta ! A.charset "UTF-8"
+          H.meta ! A.name "viewport" ! A.content "width=device-width, initial-scale=1"
+          H.link ! A.rel "icon" ! A.type_ "image/x-icon" ! A.href "vite-proxy/favicon.ico"
+          H.title "Vite + Vue + TS"
+          H.script ! A.type_ "module" ! A.src "vite-proxy/@vite/client" $ ""
+        H.body $ do
+          H.div ! A.id "app" $ ""
+          H.script ! A.type_ "module" ! A.src "vite-proxy/src/pages/home/main.ts" $ ""
+    ProdEnv _ _ homeHtml _ ->
+      return $
+        H.docTypeHtml $ do
+          H.head $ do
+            H.meta ! A.charset "UTF-8"
+            H.meta ! A.name "viewport" ! A.content "width=device-width, initial-scale=1"
+            H.link ! A.rel "icon" ! A.type_ "image/x-icon" ! A.href "public/favicon.ico"
+            H.title "Vite + Vue + TS"
+            H.preEscapedString homeHtml
+          H.body $ do
+            H.div ! A.id "app" $ ""

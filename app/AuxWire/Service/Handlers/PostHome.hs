@@ -1,18 +1,26 @@
-module AuxWire.Service.Handlers.PostHome 
-  ( 
-    createHandler
-  ) where
+{-# LANGUAGE OverloadedStrings #-}
 
-import Data.Text
+module AuxWire.Service.Handlers.PostHome (
+  createHandler,
+) where
+
 import Control.Monad.IO.Class
+import Network.Socket (SockAddr)
 import Servant
+
+import Data.ByteString.Lazy.UTF8 qualified as UTF8
 
 import AuxWire.Core.API
 
-createHandler :: Registry IO -> Handler (Headers '[Header "Location" Text] NoContent)
-createHandler rr = do
-  rId <- liftIO $ createRoom rr
-  return $ addHeader (genLocation rId) NoContent
+type instance UserId IO = SockAddr
 
-genLocation :: RoomId -> Text
-genLocation = append (pack "/")
+createHandler :: AuxWire IO -> UserId IO -> Handler (Headers '[Header "Location" String] NoContent)
+createHandler auxwire uid = do
+  createRoomResult <- liftIO $ createRoom auxwire uid
+
+  case createRoomResult of
+    Left err -> throwError $ err500{errBody = "Error: " <> UTF8.fromString err}
+    Right rid -> return $ addHeader (genLocation rid) NoContent
+
+genLocation :: RoomId -> String
+genLocation = (:) '/'
